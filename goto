@@ -1,0 +1,124 @@
+#!/bin/bash
+echo "add alias goto='. /data/data/com.termux/files/usr/bin/goto' to bashrc"
+FOLDER_LIST="$HOME/.goto_folders"
+SYMBOLIC_BASE_PATH="$HOME/storage/shared"
+
+# Resolve the symbolic link to get the actual path
+BASE_PATH=$(readlink -f "$SYMBOLIC_BASE_PATH")
+
+# Initialize the folder list file if it doesn't exist
+initialize_folder_list() {
+    if [ ! -f "$FOLDER_LIST" ]; then
+        echo "Initializing folder list..."
+        mkdir -p "$BASE_PATH"
+        echo "$BASE_PATH/my_data" > "$FOLDER_LIST"
+        echo "$BASE_PATH/Download" >> "$FOLDER_LIST"
+        echo "$BASE_PATH/my_project" >> "$FOLDER_LIST"
+    fi
+}
+
+# Function to add a folder to the list
+add_folder() {
+    current_path="$BASE_PATH"
+    
+    while true; do
+        echo "Available folders in '$current_path':"
+        
+        # Create an array to store folder names
+        declare -a folder_array
+        
+        # Use while read loop to properly handle spaces in folder names
+        while IFS= read -r -d $'\0' dir; do
+            # Get the relative path by removing the current_path prefix
+            relative_dir="${dir#$current_path/}"
+            # Only add non-hidden folders and skip the current directory
+            if [[ "$relative_dir" != "" && ! "$relative_dir" =~ ^\. ]]; then
+                folder_array+=("$relative_dir")
+            fi
+        done < <(find "$current_path" -maxdepth 1 -type d -print0 | sort -z)
+        
+        # Check if there are subfolders available
+        if [ "${#folder_array[@]}" -eq 0 ]; then
+            echo "No subfolders available."
+            break
+        fi
+
+        # Display folders with numbers
+        for i in "${!folder_array[@]}"; do
+            echo "$((i + 1)). ${folder_array[$i]}"
+        done
+        
+        # Get user selection
+        while true; do
+            read -p "Select a folder by number or enter a folder name: " folder_input
+            
+            if [[ "$folder_input" =~ ^[0-9]+$ ]] && [ "$folder_input" -ge 1 ] && [ "$folder_input" -le "${#folder_array[@]}" ]; then
+                # User entered a number
+                selected_folder="$current_path/${folder_array[$((folder_input - 1))]}"
+                break
+            else
+                # User entered a folder name
+                potential_folder="$current_path/$folder_input"
+                if [ -d "$potential_folder" ]; then
+                    selected_folder="$potential_folder"
+                    break
+                else
+                    echo "Invalid folder name or number. Please try again."
+                fi
+            fi
+        done
+        
+        # Update current path and ask about going deeper
+        if [ -d "$selected_folder" ]; then
+            current_path="$selected_folder"
+            echo "Current path: $current_path"
+            
+            read -p "Do you want to navigate into a subfolder? (y/n): " go_deeper
+            if [[ "$go_deeper" != "y" ]]; then
+                # Only add the path when user selects "n"
+                if ! grep -Fxq "$current_path" "$FOLDER_LIST"; then
+                    echo "$current_path" >> "$FOLDER_LIST"
+                    echo "Folder added successfully!"
+                else
+                    echo "Folder is already in the list."
+                fi
+                break
+            fi
+        else
+            echo "Invalid folder selection. Please try again."
+        fi
+    done
+
+    echo "Returning to the main prompt. You can run 'goto' to navigate or 'goto --add' to add more folders."
+}
+
+# Function to navigate to a folder
+navigate_folder() {
+    if [ ! -f "$FOLDER_LIST" ]; then
+        echo "Folder list is empty. Please add folders first using 'goto --add'."
+        return
+    fi
+
+    echo "Available folders:"
+    nl -w2 -s'. ' "$FOLDER_LIST"
+
+    read -p "Enter the number of the folder to navigate: " folder_num
+    folder=$(sed -n "${folder_num}p" "$FOLDER_LIST")
+
+    # If folder exists, navigate to it
+    if [ -n "$folder" ]; then
+        # Expand ~ to $HOME for the folder path and navigate to it
+        cd "${folder/#\~/$HOME}" && pwd
+    else
+        echo "Invalid choice!"
+    fi
+}
+
+# Main script logic
+initialize_folder_list
+
+if [ "$1" == "--add" ]; then
+    add_folder
+else
+    navigate_folder
+fi
