@@ -87,11 +87,11 @@ while [ ! -d ~/storage ]; do
 done
 echo "Storage is ready."
 
-# Step 2: Update package list
-echo "Updating package list..."
-apt update
-if ! check_success "apt update"; then
-    log_error "apt update failed."
+# Step 2: Update and upgrade packages
+echo "Updating and upgrading packages..."
+apt update && apt upgrade -y
+if ! check_success "apt update && apt upgrade"; then
+    log_error "apt update && apt upgrade failed."
 fi
 
 # Step 3: Install git
