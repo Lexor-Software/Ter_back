@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Files to save the lists
+TERMUX_PACKAGES_FILE="installed_packages.txt"
+PIP_PACKAGES_FILE="installed_pip_packages.txt"
+ERROR_LOG="setup_errors.log"
+
 # Function to check if a command was successful
 check_success() {
     if [ $? -ne 0 ]; then
@@ -10,11 +15,63 @@ check_success() {
 
 # Function to log errors
 log_error() {
-    echo "Error: $1" >> setup_errors.log
+    echo "Error: $1" >> "$ERROR_LOG"
+}
+
+# Function to ask for user confirmation
+ask_confirm() {
+    local prompt="$1"
+    while true; do
+        read -rp "$prompt (y/n): " response
+        case "$response" in
+            [Yy]*) return 0 ;;
+            [Nn]*) return 1 ;;
+            *) echo "Please answer yes (y) or no (n)." ;;
+        esac
+    done
+}
+
+# Function to restore Termux packages
+restore_termux_packages() {
+    echo "Restoring Termux packages..."
+    if [ -f "$TERMUX_PACKAGES_FILE" ]; then
+        while read -r package; do
+            echo "Installing $package..."
+            apt install -y "$package" 2>> "$ERROR_LOG"
+            if ! check_success "apt install $package"; then
+                echo "Skipping $package due to errors."
+                log_error "Failed to install $package."
+            fi
+        done < "$TERMUX_PACKAGES_FILE"
+
+        # Attempt to fix broken dependencies
+        echo "Attempting to fix broken dependencies..."
+        apt-get install -f -y 2>> "$ERROR_LOG"
+        if ! check_success "apt-get install -f"; then
+            log_error "Failed to fix broken dependencies."
+        fi
+    else
+        echo "Error: $TERMUX_PACKAGES_FILE not found. Please ensure the backup file exists."
+        log_error "$TERMUX_PACKAGES_FILE not found."
+    fi
+}
+
+# Function to restore pip packages
+restore_pip_packages() {
+    echo "Restoring pip packages..."
+    if [ -f "$PIP_PACKAGES_FILE" ]; then
+        pip install -r "$PIP_PACKAGES_FILE" 2>> "$ERROR_LOG"
+        if ! check_success "pip install -r $PIP_PACKAGES_FILE"; then
+            log_error "Failed to restore pip packages."
+        fi
+    else
+        echo "Error: $PIP_PACKAGES_FILE not found. Please ensure the backup file exists."
+        log_error "$PIP_PACKAGES_FILE not found."
+    fi
 }
 
 # Initialize error log
-> setup_errors.log
+> "$ERROR_LOG"
 
 # Step 1: Set up storage permissions
 echo "Setting up storage permissions..."
@@ -91,32 +148,18 @@ if ! check_success "source .bashrc"; then
 fi
 
 # Step 9: Restore Termux packages
-echo "Restoring Termux packages..."
-if [ -f "installed_packages.txt" ]; then
-    # Install packages one by one to handle conflicts
-    while read -r package; do
-        echo "Installing $package..."
-        apt install -y "$package" 2>> setup_errors.log
-        if ! check_success "apt install $package"; then
-            echo "Skipping $package due to errors."
-            log_error "Failed to install $package."
-        fi
-    done < installed_packages.txt
+restore_termux_packages
 
-    # Attempt to fix broken dependencies
-    echo "Attempting to fix broken dependencies..."
-    apt-get install -f -y 2>> setup_errors.log
-    if ! check_success "apt-get install -f"; then
-        log_error "Failed to fix broken dependencies."
-    fi
+# Step 10: Ask to restore pip packages
+if ask_confirm "Do you want to restore pip packages?"; then
+    restore_pip_packages
 else
-    echo "Error: installed_packages.txt not found. Please ensure the backup file exists."
-    log_error "installed_packages.txt not found."
+    echo "Skipping pip package restoration."
 fi
 
 # Check if any errors occurred
-if [ -s setup_errors.log ]; then
-    echo "Setup completed with errors. Check setup_errors.log for details."
+if [ -s "$ERROR_LOG" ]; then
+    echo "Setup completed with errors. Check $ERROR_LOG for details."
 else
     echo "Setup completed successfully!"
 fi
