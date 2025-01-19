@@ -1,80 +1,122 @@
 #!/bin/bash
 
-   # Function to check if a command was successful
-   check_success() {
-       if [ $? -ne 0 ]; then
-           echo "Error: $1 failed. Exiting..."
-           exit 1
-       fi
-   }
+# Function to check if a command was successful
+check_success() {
+    if [ $? -ne 0 ]; then
+        echo "Error: $1 failed."
+        return 1
+    fi
+}
 
-   # Step 1: Set up storage permissions
-   echo "Setting up storage permissions..."
-   termux-setup-storage
-   check_success "termux-setup-storage"
+# Function to log errors
+log_error() {
+    echo "Error: $1" >> setup_errors.log
+}
 
-   # Wait for storage to be mounted
-   echo "Waiting for storage to be ready..."
-   while [ ! -d ~/storage ]; do
-       sleep 1
-   done
-   echo "Storage is ready."
+# Initialize error log
+> setup_errors.log
 
-   # Step 2: Update package list
-   echo "Updating package list..."
-   apt update
-   check_success "apt update"
+# Step 1: Set up storage permissions
+echo "Setting up storage permissions..."
+termux-setup-storage
+if ! check_success "termux-setup-storage"; then
+    log_error "termux-setup-storage failed."
+fi
 
-   # Step 3: Install git
-   echo "Installing git..."
-   apt install git -y
-   check_success "apt install git"
+# Wait for storage to be mounted
+echo "Waiting for storage to be ready..."
+while [ ! -d ~/storage ]; do
+    sleep 1
+done
+echo "Storage is ready."
 
-   # Step 4: Clone the Ter_back repository
-   echo "Cloning Ter_back repository..."
-   if [ -d "Ter_back" ]; then
-       echo "Ter_back directory already exists. Skipping clone."
-   else
-       git clone https://github.com/Lexor-Software/Ter_back.git
-       check_success "git clone"
-   fi
+# Step 2: Update package list
+echo "Updating package list..."
+apt update
+if ! check_success "apt update"; then
+    log_error "apt update failed."
+fi
 
-   # Step 5: Change to the Ter_back directory
-   echo "Changing to Ter_back directory..."
-   cd Ter_back || { echo "Failed to change directory. Exiting..."; exit 1; }
+# Step 3: Install git
+echo "Installing git..."
+apt install git -y
+if ! check_success "apt install git"; then
+    log_error "apt install git failed."
+fi
 
-   # Step 6: Copy the goto script
-   echo "Copying goto script..."
-   if [ -f "goto" ]; then
-       cp goto /data/data/com.termux/files/usr/bin/goto
-       check_success "cp goto"
-   else
-       echo "Error: goto script not found in Ter_back directory. Exiting..."
-       exit 1
-   fi
+# Step 4: Clone the Ter_back repository
+echo "Cloning Ter_back repository..."
+if [ -d "Ter_back" ]; then
+    echo "Ter_back directory already exists. Skipping clone."
+else
+    git clone https://github.com/Lexor-Software/Ter_back.git
+    if ! check_success "git clone"; then
+        log_error "git clone failed."
+    fi
+fi
 
-   # Step 7: Copy the .bashrc file
-   echo "Copying .bashrc file..."
-   if [ -f ".bashrc" ]; then
-       cp .bashrc ~/.bashrc
-       check_success "cp .bashrc"
-   else
-       echo "Error: .bashrc file not found in Ter_back directory. Exiting..."
-       exit 1
-   fi
+# Step 5: Change to the Ter_back directory
+echo "Changing to Ter_back directory..."
+cd Ter_back || { echo "Failed to change directory. Exiting..."; exit 1; }
 
-   # Step 8: Source the .bashrc file
-   echo "Sourcing .bashrc file..."
-   source ~/.bashrc
-   check_success "source .bashrc"
+# Step 6: Copy the goto script
+echo "Copying goto script..."
+if [ -f "goto" ]; then
+    cp goto /data/data/com.termux/files/usr/bin/goto
+    if ! check_success "cp goto"; then
+        log_error "cp goto failed."
+    fi
+else
+    echo "Error: goto script not found in Ter_back directory."
+    log_error "goto script not found."
+fi
 
-   # Step 9: Restore Termux packages
-   echo "Restoring Termux packages..."
-   if [ -f "installed_packages.txt" ]; then
-       xargs -a installed_packages.txt apt install -y
-       check_success "xargs apt install"
-   else
-       echo "Error: installed_packages.txt not found. Please ensure the backup file exists."
-   fi
+# Step 7: Copy the .bashrc file
+echo "Copying .bashrc file..."
+if [ -f ".bashrc" ]; then
+    cp .bashrc ~/.bashrc
+    if ! check_success "cp .bashrc"; then
+        log_error "cp .bashrc failed."
+    fi
+else
+    echo "Error: .bashrc file not found in Ter_back directory."
+    log_error ".bashrc file not found."
+fi
 
-   echo "Setup completed successfully!"
+# Step 8: Source the .bashrc file
+echo "Sourcing .bashrc file..."
+source ~/.bashrc
+if ! check_success "source .bashrc"; then
+    log_error "source .bashrc failed."
+fi
+
+# Step 9: Restore Termux packages
+echo "Restoring Termux packages..."
+if [ -f "installed_packages.txt" ]; then
+    # Install packages one by one to handle conflicts
+    while read -r package; do
+        echo "Installing $package..."
+        apt install -y "$package" 2>> setup_errors.log
+        if ! check_success "apt install $package"; then
+            echo "Skipping $package due to errors."
+            log_error "Failed to install $package."
+        fi
+    done < installed_packages.txt
+
+    # Attempt to fix broken dependencies
+    echo "Attempting to fix broken dependencies..."
+    apt-get install -f -y 2>> setup_errors.log
+    if ! check_success "apt-get install -f"; then
+        log_error "Failed to fix broken dependencies."
+    fi
+else
+    echo "Error: installed_packages.txt not found. Please ensure the backup file exists."
+    log_error "installed_packages.txt not found."
+fi
+
+# Check if any errors occurred
+if [ -s setup_errors.log ]; then
+    echo "Setup completed with errors. Check setup_errors.log for details."
+else
+    echo "Setup completed successfully!"
+fi
