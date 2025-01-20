@@ -164,41 +164,70 @@ restore_pip_packages() {
 }
 
 # Function to install and configure Termux GUI
+# Function to install and configure Termux GUI
 install_termux_gui() {
     echo -e "${BLUE}Installing Termux GUI...${RESET}"
 
-    # Install required packages
-    pkg install termux-x11 tigervnc -y > /dev/null 2>&1 &
-    spinner $! "Installing termux-x11 and tigervnc"
-    if ! check_success "pkg install termux-x11 tigervnc"; then
-        log_error "Failed to install termux-x11 and tigervnc."
+    # Install required repositories and packages one by one
+    pkg install tur-repo -y > /dev/null 2>&1 &
+    spinner $! "Installing tur-repo"
+    if ! check_success "pkg install tur-repo"; then
+        log_error "Failed to install tur-repo."
         return 1
     fi
 
-    # Get phone's portrait resolution
-    PORTRAIT_RESOLUTION=$(termux-wallpaper -f 2>&1 | grep -oP 'Resolution: \K[0-9]+x[0-9]+')
-    if [ -z "$PORTRAIT_RESOLUTION" ]; then
-        echo -e "${YELLOW}Failed to detect portrait resolution. Using default 1080x1920.${RESET}"
-        PORTRAIT_RESOLUTION="1080x1920"
-    fi
-    echo -e "${GREEN}Detected portrait resolution: $PORTRAIT_RESOLUTION${RESET}"
-
-    # Calculate landscape resolution (swap width and height)
-    LANDSCAPE_RESOLUTION=$(echo "$PORTRAIT_RESOLUTION" | awk -F'x' '{print $2 "x" $1}')
-    echo -e "${GREEN}Calculated landscape resolution: $LANDSCAPE_RESOLUTION${RESET}"
-
-    # Configure VNC
-    mkdir -p ~/.vnc
-    echo "geometry=$PORTRAIT_RESOLUTION" > ~/.vnc/config
-    echo "localhost:1" > ~/.vnc/display
-
-    # Start VNC server
-    vncserver :1 -geometry "$PORTRAIT_RESOLUTION" -depth 24 > /dev/null 2>&1 &
-    spinner $! "Starting VNC server"
-    if ! check_success "vncserver :1"; then
-        log_error "Failed to start VNC server."
+    pkg install x11-repo -y > /dev/null 2>&1 &
+    spinner $! "Installing x11-repo"
+    if ! check_success "pkg install x11-repo"; then
+        log_error "Failed to install x11-repo."
         return 1
     fi
+
+    pkg install code-oss -y > /dev/null 2>&1 &
+    spinner $! "Installing code-oss"
+    if ! check_success "pkg install code-oss"; then
+        log_error "Failed to install code-oss."
+        return 1
+    fi
+
+    pkg install termux-x11-nightly -y > /dev/null 2>&1 &
+    spinner $! "Installing termux-x11-nightly"
+    if ! check_success "pkg install termux-x11-nightly"; then
+        log_error "Failed to install termux-x11-nightly."
+        return 1
+    fi
+
+    pkg install pulseaudio -y > /dev/null 2>&1 &
+    spinner $! "Installing pulseaudio"
+    if ! check_success "pkg install pulseaudio"; then
+        log_error "Failed to install pulseaudio."
+        return 1
+    fi
+
+    pkg install xfce4 -y > /dev/null 2>&1 &
+    spinner $! "Installing xfce4"
+    if ! check_success "pkg install xfce4"; then
+        log_error "Failed to install xfce4."
+        return 1
+    fi
+
+    # Make the start script executable
+    chmod +xrw startxfce4_termux.sh > /dev/null 2>&1 &
+    spinner $! "Making startxfce4_termux.sh executable"
+    if ! check_success "chmod +xrw startxfce4_termux.sh"; then
+        log_error "Failed to make startxfce4_termux.sh executable."
+        return 1
+    fi
+
+    # Ask if the user wants to start the GUI
+    if ask_confirm "Do you want to start the GUI now?"; then
+        bash startxfce4_termux.sh
+    else
+        echo -e "${YELLOW}You can start the desktop later by running: ./startxfce4_termux.sh${RESET}"
+    fi
+
+    echo -e "${GREEN}Termux GUI installed and configured successfully!${RESET}"
+}
 
     echo -e "${GREEN}Termux GUI installed and configured successfully!${RESET}"
     echo -e "${BLUE}You can connect to the VNC server at localhost:1.${RESET}"
