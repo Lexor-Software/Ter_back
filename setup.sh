@@ -167,6 +167,7 @@ restore_pip_packages() {
 }
 
 # Function to install and configure ZSH
+
 install_zsh() {
     echo -e "${BLUE}Installing and configuring ZSH...${RESET}"
     
@@ -194,10 +195,54 @@ install_zsh() {
         return 1
     fi
 
+    # Run Termux-header script with pre-configured answers
+    cd Termux-header
+    {
+        echo "y"  # First prompt for setup
+        sleep 2
+        echo "y"  # Second prompt for setup
+        sleep 2
+        echo "termux"  # Username prompt
+        sleep 2
+        echo "y"  # Final confirmation
+    } | bash Termux-header.sh
+    if [ $? -ne 0 ]; then
+        log_error "Failed to run Termux-header script."
+        cd ..
+        return 1
+    fi
+    cd ..
+
+    # Move zshrc to .zshrc
+    mv zshrc ~/.zshrc > /dev/null 2>> "$ERROR_LOG" &
+    spinner $! "Moving zshrc to .zshrc"
+    if ! check_success "moving zshrc"; then
+        log_error "Failed to move zshrc."
+        return 1
+    fi
+
+    # [Rest of the function remains the same]
+
+    # Install lsd
+    pkg install lsd -y > /dev/null 2>> "$ERROR_LOG" &
+    spinner $! "Installing lsd"
+    if ! check_success "pkg install lsd"; then
+        log_error "Failed to install lsd."
+        return 1
+    fi
+
+    # Clone Termux-header repository
+    git clone https://github.com/Lexor-Software/Termux-header.git > /dev/null 2>> "$ERROR_LOG" &
+    spinner $! "Cloning Termux-header repository"
+    if ! check_success "git clone Termux-header"; then
+        log_error "Failed to clone Termux-header repository."
+        return 1
+    fi
+
     # Run Termux-header script
     cd Termux-header
     bash Termux-header.sh > /dev/null 2>> "$ERROR_LOG" &
-    spinner $! "Running Termux-header script"
+    #spinner $! "Running Termux-header script"
     if ! check_success "Termux-header script"; then
         log_error "Failed to run Termux-header script."
         cd ..
@@ -243,7 +288,7 @@ install_zsh() {
     echo -e "${GREEN}ZSH installation and configuration completed successfully!${RESET}"
 }
 
-# Function to install and configure Termux GUI
+
 install_termux_gui() {
     echo -e "${BLUE}Installing Termux GUI...${RESET}"
 
@@ -262,11 +307,17 @@ install_termux_gui() {
         return 1
     fi
 
-    pkg install code-oss -y > /dev/null 2>&1 &
-    spinner $! "Installing code-oss"
-    if ! check_success "pkg install code-oss"; then
-        log_error "Failed to install code-oss."
-        return 1
+    # Ask about installing VSCode
+    if ask_confirm "Do you want to install Visual Studio Code?"; then
+        pkg install code-oss -y > /dev/null 2>&1 &
+        spinner $! "Installing code-oss"
+        if ! check_success "pkg install code-oss"; then
+            log_error "Failed to install code-oss."
+            return 1
+        fi
+    else
+        echo -e "${YELLOW}You can install VSCode and Firefox later using:${RESET}"
+        echo -e "${GREEN}pkg install code-oss firefox -y${RESET}"
     fi
 
     pkg install termux-x11-nightly -y > /dev/null 2>&1 &
@@ -289,6 +340,8 @@ install_termux_gui() {
         log_error "Failed to install xfce4."
         return 1
     fi
+
+    # [Rest of the function remains the same]
 
     # Create the startxfce4_termux.sh script if it doesn't exist
     if [ ! -f startxfce4_termux.sh ]; then
@@ -391,7 +444,7 @@ if ask_confirm "Do you want to install and configure ZSH?"; then
     else
         ZSH_INSTALLED=true
     fi
-fi
+fi  
 
 # Step 4: Install Termux GUI packages
 if ask_confirm "Do you want to install Termux GUI packages?"; then
@@ -410,7 +463,7 @@ fi
 if [ "$ZSH_INSTALLED" = true ]; then
     source ~/.zshrc
 else
-    source ~/.bashrc
+    source ~/.zshrc
 fi
 echo -e "${BLUE}Current Portrait Resolution: $PORTRAIT_RESOLUTION${RESET}"
 echo -e "${BLUE}Current Landscape Resolution: $LANDSCAPE_RESOLUTION${RESET}"
