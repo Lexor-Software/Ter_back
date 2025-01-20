@@ -148,28 +148,7 @@ else
     log_error "Ter_back directory not found."
 fi
 
-# Step 8: Rename bashrc to .bashrc and source it
-if [ -f "bashrc" ]; then
-    echo -e "${BLUE}Renaming bashrc to .bashrc...${RESET}"
-    mv bashrc .bashrc > /dev/null 2>&1 &
-    spinner $! "Renaming bashrc to .bashrc"
-    if ! check_success "mv bashrc .bashrc"; then
-        log_error "Failed to rename bashrc to .bashrc."
-    else
-        # Source the .bashrc file
-        echo -e "${BLUE}Sourcing .bashrc file...${RESET}"
-        source ~/.bashrc > /dev/null 2>&1 &
-        spinner $! "Sourcing .bashrc file"
-        if ! check_success "source .bashrc"; then
-            log_error "Failed to source .bashrc file."
-        fi
-    fi
-else
-    echo -e "${RED}Error: bashrc file not found.${RESET}"
-    log_error "bashrc file not found."
-fi
-
-# Step 9: Move the goto script and set permissions
+# Step 8: Move the goto script and set permissions
 echo -e "${BLUE}Moving goto script...${RESET}"
 if [ -f "goto" ]; then
     mv goto /data/data/com.termux/files/usr/bin/goto > /dev/null 2>&1 &
@@ -188,6 +167,27 @@ if [ -f "goto" ]; then
 else
     echo -e "${RED}Error: goto script not found.${RESET}"
     log_error "goto script not found."
+fi
+
+# Step 9: Rename bashrc to .bashrc and source it
+if [ -f "bashrc" ]; then
+    echo -e "${BLUE}Renaming bashrc to .bashrc...${RESET}"
+    mv bashrc .bashrc > /dev/null 2>&1 &
+    spinner $! "Renaming bashrc to .bashrc"
+    if ! check_success "mv bashrc .bashrc"; then
+        log_error "Failed to rename bashrc to .bashrc."
+    else
+        # Source the .bashrc file
+        echo -e "${BLUE}Sourcing .bashrc file...${RESET}"
+        source ~/.bashrc > /dev/null 2>&1 &
+        spinner $! "Sourcing .bashrc file"
+        if ! check_success "source .bashrc"; then
+            log_error "Failed to source .bashrc file."
+        fi
+    fi
+else
+    echo -e "${RED}Error: bashrc file not found.${RESET}"
+    log_error "bashrc file not found."
 fi
 
 # Step 10: Print setup completion status
