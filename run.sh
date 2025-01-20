@@ -10,6 +10,11 @@ YELLOW="\033[33m"
 BLUE="\033[34m"
 RESET="\033[0m"
 
+# Function to log errors
+log_error() {
+    echo -e "${RED}Error: $1${RESET}" >> "$ERROR_LOG"
+}
+
 # Files to save the lists
 ERROR_LOG="initial_setup_errors.log"
 
