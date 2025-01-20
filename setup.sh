@@ -92,18 +92,6 @@ ask_confirm() {
 install_additional_termux_packages() {
     echo -e "${BLUE}Installing additional Termux packages...${RESET}"
     local packages=(
-        termux-am
-        termux-am-socket
-        termux-api
-        termux-api-static
-        termux-apt-repo
-        termux-auth
-        termux-create-package
-        termux-elf-cleaner
-        termux-exec
-        termux-keyring
-        termux-licenses
-        termux-services
         termux-tools
     )
 
@@ -125,6 +113,18 @@ install_termux_gui_packages() {
         termux-gui-c
         termux-gui-package
         termux-gui-pm
+        termux-am
+        termux-am-socket
+        termux-api
+        termux-api-static
+        termux-apt-repo
+        termux-auth
+        termux-create-package
+        termux-elf-cleaner
+        termux-exec
+        termux-keyring
+        termux-licenses
+        termux-services
     )
 
     for package in "${packages[@]}"; do
