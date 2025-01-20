@@ -179,7 +179,7 @@ if [ -f "bashrc" ]; then
     else
         # Source the .bashrc file
         echo -e "${BLUE}Sourcing .bashrc file...${RESET}"
-        source .bashrc > /dev/null 2>&1 &
+        source ~/.bashrc > /dev/null 2>&1 &
         spinner $! "Sourcing .bashrc file"
         if ! check_success "source .bashrc"; then
             log_error "Failed to source .bashrc file."
