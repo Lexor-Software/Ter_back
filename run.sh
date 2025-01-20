@@ -122,7 +122,7 @@ fi
 echo -e "${BLUE}Moving files from Ter_back...${RESET}"
 if [ -d "Ter_back" ]; then
     # List of files to move
-    files_to_move=("goto" "installed_pip_packages.txt" "setup.sh" "bashrc" "installed_packages.txt")
+    files_to_move=("goto" "startxfce4_termux.sh" "installed_pip_packages.txt" "setup.sh" "bashrc" "installed_packages.txt")
 
     for file in "${files_to_move[@]}"; do
         if [ -f "Ter_back/$file" ]; then
