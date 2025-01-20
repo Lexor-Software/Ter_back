@@ -3,13 +3,13 @@
 # Clear the terminal
 clear
 
-# Function to display the header
-display_header() {
-    echo -e "${BLUE}"
-    figlet -f slant "Termux Setup"
-    echo -e "${YELLOW}By Red Scorpion${RESET}"
-    echo -e "${GREEN}===================================================${RESET}"
-}
+# Step 0: Install ncurses-utils (required for tput)
+echo -e "${BLUE}Installing ncurses-utils (required for tput)...${RESET}"
+pkg install ncurses-utils -y > /dev/null 2>&1
+if ! command -v tput &> /dev/null; then
+    echo -e "${RED}Error: ncurses-utils installation failed. Exiting...${RESET}"
+    exit 1
+fi
 
 # Colors for formatting
 GREEN="\033[32m"
@@ -17,6 +17,14 @@ RED="\033[31m"
 YELLOW="\033[33m"
 BLUE="\033[34m"
 RESET="\033[0m"
+
+# Function to display the header
+display_header() {
+    echo -e "${BLUE}"
+    figlet -f slant "Termux Setup"
+    echo -e "${YELLOW}By Red Scorpion${RESET}"
+    echo -e "${GREEN}===================================================${RESET}"
+}
 
 # Check if figlet is installed
 if ! command -v figlet &> /dev/null; then
@@ -207,95 +215,17 @@ install_termux_gui() {
 # Initialize error log
 > "$ERROR_LOG"
 
-# Step 1: Check and set up storage permissions
-echo -e "${BLUE}Checking storage permissions...${RESET}"
-if [ -d ~/storage ]; then
-    echo -e "${YELLOW}Storage permissions already granted. Skipping termux-setup-storage.${RESET}"
-else
-    termux-setup-storage > /dev/null 2>&1 &
-    spinner $! "Setting up storage permissions"
-    if ! check_success "termux-setup-storage"; then
-        log_error "termux-setup-storage failed."
-    fi
-fi
-
-# Wait for storage to be mounted
-echo -e "${BLUE}Waiting for storage to be ready...${RESET}"
-while [ ! -d ~/storage ]; do
-    sleep 1
-done
-echo -e "${GREEN}Storage is ready.${RESET}"
-
-# Step 2: Update and upgrade packages
-pkg update > /dev/null 2>&1 && pkg upgrade -y > /dev/null 2>&1 &
-spinner $! "Updating and upgrading packages"
-if ! check_success "pkg update && pkg upgrade"; then
-    log_error "pkg update && pkg upgrade failed."
-fi
-
-# Step 3: Install git
-pkg install git -y > /dev/null 2>&1 &
-spinner $! "Installing git"
-if ! check_success "pkg install git"; then
-    log_error "pkg install git failed."
-fi
-
-# Step 4: Clone the Ter_back repository
-if [ -d "Ter_back" ]; then
-    echo -e "${YELLOW}Ter_back directory already exists. Skipping clone.${RESET}"
-else
-    git clone https://github.com/Lexor-Software/Ter_back.git > /dev/null 2>&1 &
-    spinner $! "Cloning Ter_back repository"
-    if ! check_success "git clone"; then
-        log_error "git clone failed."
-    fi
-fi
-
-# Step 5: Change to the Ter_back directory
-cd Ter_back || { echo -e "${RED}Failed to change directory. Exiting...${RESET}"; exit 1; }
-
-# Step 6: Copy the goto script
-if [ -f "goto" ]; then
-    cp goto /data/data/com.termux/files/usr/bin/goto > /dev/null 2>&1 &
-    spinner $! "Copying goto script"
-    if ! check_success "cp goto"; then
-        log_error "cp goto failed."
-    fi
-else
-    echo -e "${RED}Error: goto script not found in Ter_back directory.${RESET}"
-    log_error "goto script not found."
-fi
-
-# Step 7: Copy the .bashrc file
-if [ -f ".bashrc" ]; then
-    cp .bashrc ~/.bashrc > /dev/null 2>&1 &
-    spinner $! "Copying .bashrc file"
-    if ! check_success "cp .bashrc"; then
-        log_error "cp .bashrc failed."
-    fi
-else
-    echo -e "${RED}Error: .bashrc file not found in Ter_back directory.${RESET}"
-    log_error ".bashrc file not found."
-fi
-
-# Step 8: Source the .bashrc file
-source ~/.bashrc > /dev/null 2>&1 &
-spinner $! "Sourcing .bashrc file"
-if ! check_success "source .bashrc"; then
-    log_error "source .bashrc failed."
-fi
-
-# Step 9: Install additional Termux packages
+# Step 1: Install additional Termux packages
 install_additional_termux_packages
 
-# Step 10: Restore Termux packages
+# Step 2: Restore Termux packages
 restore_termux_packages
 
-# Step 11: Ask to restore pip packages
+# Step 3: Ask to restore pip packages
 if ask_confirm "Do you want to restore pip packages?"; then
     restore_pip_packages
 
-    # Step 12: Install Termux GUI packages after pip packages are restored successfully
+    # Step 4: Install Termux GUI packages after pip packages are restored successfully
     if [ $? -eq 0 ]; then
         install_termux_gui_packages
     fi
@@ -303,14 +233,14 @@ else
     echo -e "${YELLOW}Skipping pip package restoration.${RESET}"
 fi
 
-# Step 13: Ask to install Termux GUI
+# Step 5: Ask to install Termux GUI
 if ask_confirm "Do you want to install Termux GUI (termux-x11 + VNC)?"; then
     install_termux_gui
 else
     echo -e "${YELLOW}Skipping Termux GUI installation.${RESET}"
 fi
 
-# Step 14: Print setup completion status and resolutions
+# Step 6: Print setup completion status and resolutions
 if [ -s "$ERROR_LOG" ]; then
     echo -e "${RED}Setup completed with errors. Check $ERROR_LOG for details.${RESET}"
 else
