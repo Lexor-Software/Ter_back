@@ -158,43 +158,25 @@ else
     log_error "Ter_back directory not found."
 fi
 
-# Step 8: Make setup.sh executable
-echo -e "${BLUE}Making setup.sh executable...${RESET}"
-chmod +xrw setup.sh > /dev/null 2>&1 &
-spinner $! "Making setup.sh executable"
-if ! check_success "chmod +xrw setup.sh"; then
-    log_error "Failed to make setup.sh executable."
-fi
-
-# Step 9: Print setup completion status
-if [ -s "$ERROR_LOG" ]; then
-    echo -e "${RED}Initial setup completed with errors. Check $ERROR_LOG for details.${RESET}"
-else
-    echo -e "${GREEN}Initial setup completed successfully!${RESET}"
-fi
-
-# Step 10: Execute setup.sh
-echo -e "${BLUE}Executing setup.sh...${RESET}"
-bash setup.shack folder"
-            if ! check_success "rm -rf Ter_back"; then
-                log_error "Failed to delete Ter_back folder."
-            fi
-        fi
+# Step 8: Move the goto script
+echo -e "${BLUE}Moving goto script...${RESET}"
+if [ -f "goto" ]; then
+    mv goto /data/data/com.termux/files/usr/bin/goto > /dev/null 2>&1 &
+    spinner $! "Moving goto script"
+    if ! check_success "mv goto"; then
+        log_error "Failed to move goto script."
     else
-        echo -e "${RED}Error: .bashrc file not found in Ter_back directory.${RESET}"
-        log_error ".bashrc file not found in Ter_back directory."
+        # Set permissions for the goto script
+        echo -e "${BLUE}Setting permissions for goto script...${RESET}"
+        chmod +xrw /data/data/com.termux/files/usr/bin/goto > /dev/null 2>&1 &
+        spinner $! "Setting permissions for goto script"
+        if ! check_success "chmod +xrw goto"; then
+            log_error "Failed to set permissions for goto script."
+        fi
     fi
 else
-    echo -e "${RED}Error: Ter_back directory not found.${RESET}"
-    log_error "Ter_back directory not found."
-fi
-
-# Step 8: Make setup.sh executable
-echo -e "${BLUE}Making setup.sh executable...${RESET}"
-chmod +xrw setup.sh > /dev/null 2>&1 &
-spinner $! "Making setup.sh executable"
-if ! check_success "chmod +xrw setup.sh"; then
-    log_error "Failed to make setup.sh executable."
+    echo -e "${RED}Error: goto script not found.${RESET}"
+    log_error "goto script not found."
 fi
 
 # Step 9: Print setup completion status
