@@ -6,7 +6,7 @@ clear
 # Function to display the header
 display_header() {
     echo -e "${BLUE}"
-    figlet -f slant "Setup"
+    figlet -f slant "Termux Setup"
     echo -e "${YELLOW}By Red Scorpion${RESET}"
     echo -e "${GREEN}===================================================${RESET}"
 }
