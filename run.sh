@@ -121,17 +121,23 @@ fi
 # Step 7: Move contents of Ter_back to the current directory
 echo -e "${BLUE}Moving contents of Ter_back...${RESET}"
 if [ -d "Ter_back" ]; then
-    mv Ter_back/* . > /dev/null 2>&1 &
-    spinner $! "Moving contents of Ter_back"
-    if ! check_success "mv Ter_back/* ."; then
-        log_error "Failed to move contents of Ter_back."
-    else
-        # Delete the Ter_back folder after moving its contents
-        rm -rf Ter_back > /dev/null 2>&1 &
-        spinner $! "Deleting Ter_back folder"
-        if ! check_success "rm -rf Ter_back"; then
-            log_error "Failed to delete Ter_back folder."
+    # Check if .bashrc exists in Ter_back before moving
+    if [ -f "Ter_back/.bashrc" ]; then
+        mv Ter_back/* . > /dev/null 2>&1 &
+        spinner $! "Moving contents of Ter_back"
+        if ! check_success "mv Ter_back/* ."; then
+            log_error "Failed to move contents of Ter_back."
+        else
+            # Delete the Ter_back folder after moving its contents
+            rm -rf Ter_back > /dev/null 2>&1 &
+            spinner $! "Deleting Ter_back folder"
+            if ! check_success "rm -rf Ter_back"; then
+                log_error "Failed to delete Ter_back folder."
+            fi
         fi
+    else
+        echo -e "${RED}Error: .bashrc file not found in Ter_back directory.${RESET}"
+        log_error ".bashrc file not found in Ter_back directory."
     fi
 else
     echo -e "${RED}Error: Ter_back directory not found.${RESET}"
@@ -155,4 +161,4 @@ fi
 
 # Step 10: Execute setup.sh
 echo -e "${BLUE}Executing setup.sh...${RESET}"
-bash setup.sh
+bash setup.shash setup.sh
