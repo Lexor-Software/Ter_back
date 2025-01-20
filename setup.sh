@@ -38,6 +38,7 @@ ERROR_LOG="setup_errors.log"
 
 # Variable to track if ZSH was installed
 ZSH_INSTALLED=false
+BASH_INSTALLED=false
 
 # Spinner characters
 SPINNER=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
@@ -167,7 +168,6 @@ restore_pip_packages() {
 }
 
 # Function to install and configure ZSH
-
 install_zsh() {
     echo -e "${BLUE}Installing and configuring ZSH...${RESET}"
     
@@ -185,7 +185,7 @@ install_zsh() {
     if ! check_success "pkg install lsd"; then
         log_error "Failed to install lsd."
         return 1
-    fi
+    fi    # <-- Changed to 'fi' to properly close the if statement
 
     # Clone Termux-header repository
     git clone https://github.com/Lexor-Software/Termux-header.git > /dev/null 2>> "$ERROR_LOG" &
@@ -207,43 +207,6 @@ install_zsh() {
         echo "y"  # Final confirmation
     } | bash Termux-header.sh
     if [ $? -ne 0 ]; then
-        log_error "Failed to run Termux-header script."
-        cd ..
-        return 1
-    fi
-    cd ..
-
-    # Move zshrc to .zshrc
-    mv zshrc ~/.zshrc > /dev/null 2>> "$ERROR_LOG" &
-    spinner $! "Moving zshrc to .zshrc"
-    if ! check_success "moving zshrc"; then
-        log_error "Failed to move zshrc."
-        return 1
-    fi
-
-    # [Rest of the function remains the same]
-
-    # Install lsd
-    pkg install lsd -y > /dev/null 2>> "$ERROR_LOG" &
-    spinner $! "Installing lsd"
-    if ! check_success "pkg install lsd"; then
-        log_error "Failed to install lsd."
-        return 1
-    fi
-
-    # Clone Termux-header repository
-    git clone https://github.com/Lexor-Software/Termux-header.git > /dev/null 2>> "$ERROR_LOG" &
-    spinner $! "Cloning Termux-header repository"
-    if ! check_success "git clone Termux-header"; then
-        log_error "Failed to clone Termux-header repository."
-        return 1
-    fi
-
-    # Run Termux-header script
-    cd Termux-header
-    bash Termux-header.sh > /dev/null 2>> "$ERROR_LOG" &
-    #spinner $! "Running Termux-header script"
-    if ! check_success "Termux-header script"; then
         log_error "Failed to run Termux-header script."
         cd ..
         return 1
@@ -286,8 +249,64 @@ install_zsh() {
     fi
 
     echo -e "${GREEN}ZSH installation and configuration completed successfully!${RESET}"
+    return 0
 }
 
+# Function to install and configure Bash
+install_bash() {
+    echo -e "${BLUE}Installing and configuring Bash...${RESET}"
+    
+    # Move goto script
+    echo -e "${BLUE}Moving goto script...${RESET}"
+    if [ -f "goto" ]; then
+        mv goto /data/data/com.termux/files/usr/bin/goto > /dev/null 2>&1 &
+        spinner $! "Moving goto script"
+        if ! check_success "mv goto"; then
+            log_error "Failed to move goto script."
+            return 1
+        fi
+
+        # Set permissions for the goto script
+        echo -e "${BLUE}Setting permissions for goto script...${RESET}"
+        chmod +xrw /data/data/com.termux/files/usr/bin/goto > /dev/null 2>&1 &
+        spinner $! "Setting permissions for goto script"
+        if ! check_success "chmod +xrw goto"; then
+            log_error "Failed to set permissions for goto script."
+            return 1
+        fi
+    else
+        echo -e "${RED}Error: goto script not found.${RESET}"
+        log_error "goto script not found."
+        return 1
+    fi
+
+    # Configure bashrc
+    if [ -f "bashrc" ]; then
+        echo -e "${BLUE}Renaming bashrc to .bashrc...${RESET}"
+        mv bashrc ~/.bashrc > /dev/null 2>&1 &
+        spinner $! "Renaming bashrc to .bashrc"
+        if ! check_success "mv bashrc .bashrc"; then
+            log_error "Failed to rename bashrc to .bashrc."
+            return 1
+        fi
+
+        # Source the .bashrc file
+        echo -e "${BLUE}Sourcing .bashrc file...${RESET}"
+        source ~/.bashrc > /dev/null 2>&1 &
+        spinner $! "Sourcing .bashrc file"
+        if ! check_success "source .bashrc"; then
+            log_error "Failed to source .bashrc file."
+            return 1
+        fi
+    else
+        echo -e "${RED}Error: bashrc file not found.${RESET}"
+        log_error "bashrc file not found."
+        return 1
+    fi
+
+    echo -e "${GREEN}Bash configuration completed successfully!${RESET}"
+    return 0
+}
 
 install_termux_gui() {
     echo -e "${BLUE}Installing Termux GUI...${RESET}"
@@ -341,8 +360,6 @@ install_termux_gui() {
         return 1
     fi
 
-    # [Rest of the function remains the same]
-
     # Create the startxfce4_termux.sh script if it doesn't exist
     if [ ! -f startxfce4_termux.sh ]; then
         echo -e "${YELLOW}Creating startxfce4_termux.sh...${RESET}"
@@ -375,6 +392,9 @@ env DISPLAY=:0 dbus-launch --exit-with-session xfce4-session & > /dev/null 2>&1
 exit 0
 EOF
     fi
+
+    # Make the start script executable
+    chmod +xrw startxfce4_termux.sh > /dev/null 2>&1 &
 
     # Make the start script executable
     chmod +xrw startxfce4_termux.sh > /dev/null 2>&1 &
@@ -436,15 +456,34 @@ if ask_confirm "Do you want to restore pip packages?"; then
     restore_pip_packages
 fi
 
-# Step 3.5: Install ZSH
-if ask_confirm "Do you want to install and configure ZSH?"; then
-    install_zsh
-    if [ $? -ne 0 ]; then
-        echo -e "${RED}ZSH installation failed. Check $ERROR_LOG for details.${RESET}"
-    else
-        ZSH_INSTALLED=true
-    fi
-fi  
+# Step 3.5: Shell Selection and Installation
+echo -e "${BLUE}Choose your preferred shell:${RESET}"
+echo -e "1) ZSH (Feature-rich shell with advanced completion)"
+echo -e "2) Bash (Traditional shell with basic features)"
+while true; do
+    read -rp "$(echo -e "${BLUE}Enter your choice (1 or 2): ${RESET}")" shell_choice
+    case "$shell_choice" in
+        1)
+            if install_zsh; then
+                ZSH_INSTALLED=true
+            else
+                echo -e "${RED}ZSH installation failed. Check $ERROR_LOG for details.${RESET}"
+            fi
+            break
+            ;;
+        2)
+            if install_bash; then
+                BASH_INSTALLED=true
+            else
+                echo -e "${RED}Bash configuration failed. Check $ERROR_LOG for details.${RESET}"
+            fi
+            break
+            ;;
+        *)
+            echo -e "${YELLOW}Please enter 1 for ZSH or 2 for Bash.${RESET}"
+            ;;
+    esac
+done
 
 # Step 4: Install Termux GUI packages
 if ask_confirm "Do you want to install Termux GUI packages?"; then
@@ -462,8 +501,8 @@ fi
 # Print current portrait and landscape resolutions
 if [ "$ZSH_INSTALLED" = true ]; then
     source ~/.zshrc
-else
-    source ~/.zshrc
+elif [ "$BASH_INSTALLED" = true ]; then
+    source ~/.bashrc
 fi
 echo -e "${BLUE}Current Portrait Resolution: $PORTRAIT_RESOLUTION${RESET}"
 echo -e "${BLUE}Current Landscape Resolution: $LANDSCAPE_RESOLUTION${RESET}"
