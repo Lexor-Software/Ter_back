@@ -1,9 +1,42 @@
 #!/bin/bash
 
-# Files to save the lists
-TERMUX_PACKAGES_FILE="installed_packages.txt"
-PIP_PACKAGES_FILE="installed_pip_packages.txt"
-ERROR_LOG="setup_errors.log"
+# Clear the terminal
+clear
+
+# Function to display the header
+display_header() {
+    echo -e "${BLUE}"
+    echo "  _______  ______  __  __  ____  _  __   ____  _   _ ____  "
+    echo " |__   __||  ____||  \/  |/ __ \| |/ /  / __ \| | | |  _ \ "
+    echo "    | |   | |__   | \  / | |  | | ' /  | |  | | | | | |_) |"
+    echo "    | |   |  __|  | |\/| | |  | |  <   | |  | | | | |  __/ "
+    echo "    | |   | |____ | |  | | |__| | . \  | |__| | |_| | |    "
+    echo "    |_|   |______||_|  |_|\____/|_|\_\  \___\_\\___/|_|    "
+    echo -e "${RESET}"
+    echo -e "${YELLOW}                     By Red Scorpion${RESET}"
+    echo -e "${GREEN}===================================================${RESET}"
+}
+
+# Function to animate the header
+animate_header() {
+    for i in {1..5}; do
+        clear
+        display_header
+        sleep 0.5
+        clear
+        echo -e "${BLUE}"
+        echo "  _______  ______  __  __  ____  _  __   ____  _   _ ____  "
+        echo " |__   __||  ____||  \/  |/ __ \| |/ /  / __ \| | | |  _ \ "
+        echo "    | |   | |__   | \  / | |  | | ' /  | |  | | | | | |_) |"
+        echo "    | |   |  __|  | |\/| | |  | |  <   | |  | | | | |  __/ "
+        echo "    | |   | |____ | |  | | |__| | . \  | |__| | |_| | |    "
+        echo "    |_|   |______||_|  |_|\____/|_|\_\  \___\_\\___/|_|    "
+        echo -e "${RESET}"
+        echo -e "${YELLOW}                     By Red Scorpion${RESET}"
+        echo -e "${GREEN}===================================================${RESET}"
+        sleep 0.5
+    done
+}
 
 # Colors for formatting
 GREEN="\033[32m"
@@ -11,6 +44,11 @@ RED="\033[31m"
 YELLOW="\033[33m"
 BLUE="\033[34m"
 RESET="\033[0m"
+
+# Files to save the lists
+TERMUX_PACKAGES_FILE="installed_packages.txt"
+PIP_PACKAGES_FILE="installed_pip_packages.txt"
+ERROR_LOG="setup_errors.log"
 
 # Spinner characters
 SPINNER=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
@@ -78,6 +116,18 @@ ask_confirm() {
 install_additional_termux_packages() {
     echo -e "${BLUE}Installing additional Termux packages...${RESET}"
     local packages=(
+        termux-am
+        termux-am-socket
+        termux-api
+        termux-api-static
+        termux-apt-repo
+        termux-auth
+        termux-create-package
+        termux-elf-cleaner
+        termux-exec
+        termux-keyring
+        termux-licenses
+        termux-services
         termux-tools
     )
 
@@ -99,18 +149,6 @@ install_termux_gui_packages() {
         termux-gui-c
         termux-gui-package
         termux-gui-pm
-        termux-am
-        termux-am-socket
-        termux-api
-        termux-api-static
-        termux-apt-repo
-        termux-auth
-        termux-create-package
-        termux-elf-cleaner
-        termux-exec
-        termux-keyring
-        termux-licenses
-        termux-services
     )
 
     for package in "${packages[@]}"; do
@@ -206,6 +244,9 @@ install_termux_gui() {
 
 # Initialize error log
 > "$ERROR_LOG"
+
+# Display the animated header
+animate_header
 
 # Step 1: Check and set up storage permissions
 echo -e "${BLUE}Checking storage permissions...${RESET}"
