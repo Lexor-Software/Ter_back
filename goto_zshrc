@@ -1,0 +1,95 @@
+#!/bin/zsh
+FOLDER_LIST="$HOME/.goto_folders"
+SYMBOLIC_BASE_PATH="$HOME/storage/shared"
+BASE_PATH=$(readlink -f "$SYMBOLIC_BASE_PATH")
+
+# Initialize folder list
+if [ ! -f "$FOLDER_LIST" ]; then
+    echo "Initializing folder list..."
+    mkdir -p "$BASE_PATH"
+    echo "$BASE_PATH/my_data" > "$FOLDER_LIST"
+    echo "$BASE_PATH/Download" >> "$FOLDER_LIST"
+    echo "$BASE_PATH/my_project" >> "$FOLDER_LIST"
+fi
+
+# Add folder function
+function add_folder() {
+    local current_path="$BASE_PATH"
+    
+    while true; do
+        echo "\nAvailable folders in: $current_path"
+        
+        # List directories and store in array
+        local folders=()
+        local i=1
+        
+        for dir in "$current_path"/*/; do
+            if [ -d "$dir" ]; then
+                basename "$dir"
+                folders[$i]="$dir"
+                ((i++))
+            fi
+        done
+        
+        if [ ${#folders[@]} -eq 0 ]; then
+            echo "No subfolders available."
+            return
+        fi
+        
+        echo "\nEnter folder number or name (or 'q' to quit): "
+        read choice
+        
+        [ "$choice" = "q" ] && return
+        
+        if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -le "${#folders[@]}" ]; then
+            current_path="${folders[$choice]}"
+        else
+            local new_path="$current_path/$choice"
+            if [ -d "$new_path" ]; then
+                current_path="$new_path"
+            else
+                echo "Invalid selection"
+                continue
+            fi
+        fi
+        
+        echo "Add this folder to quick access? (y/n): "
+        read add_choice
+        
+        if [ "$add_choice" = "y" ]; then
+            echo "$current_path" >> "$FOLDER_LIST"
+            echo "Added: $current_path"
+            return
+        fi
+    done
+}
+
+# Navigate function
+function navigate_folder() {
+    if [ ! -f "$FOLDER_LIST" ]; then
+        echo "No folders added yet. Use 'goto --add' first."
+        return 1
+    fi
+
+    echo "Available folders:"
+    cat -n "$FOLDER_LIST"
+    
+    echo "\nEnter folder number: "
+    read num
+    
+    local folder=$(sed -n "${num}p" "$FOLDER_LIST")
+    
+    if [ -d "$folder" ]; then
+        cd "$folder"
+        pwd
+    else
+        echo "Invalid selection"
+    fi
+}
+
+# Main logic
+if [ "$1" = "--add" ]; then
+    add_folder
+else
+    navigate_folder
+fi
