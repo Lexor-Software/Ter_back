@@ -92,13 +92,13 @@ ask_confirm() {
 install_additional_termux_packages() {
     echo -e "${BLUE}Installing additional Termux packages...${RESET}"
     local packages=(
-        termux-tools
+        htop
     )
 
     for package in "${packages[@]}"; do
-        apt install -y "$package" > /dev/null 2>> "$ERROR_LOG" &
+        pkg install -y "$package" > /dev/null 2>> "$ERROR_LOG" &
         spinner $! "Installing $package"
-        if ! check_success "apt install $package"; then
+        if ! check_success "pkg install $package"; then
             echo -e "${YELLOW}Skipping $package due to errors.${RESET}"
             log_error "Failed to install $package."
         fi
@@ -109,22 +109,8 @@ install_additional_termux_packages() {
 install_termux_gui_packages() {
     echo -e "${BLUE}Installing Termux GUI packages...${RESET}"
     local packages=(
-        termux-gui-bash
-        termux-gui-c
-        termux-gui-package
-        termux-gui-pm
-        termux-am
-        termux-am-socket
         termux-api
         termux-api-static
-        termux-apt-repo
-        termux-auth
-        termux-create-package
-        termux-elf-cleaner
-        termux-exec
-        termux-keyring
-        termux-licenses
-        termux-services
     )
 
     for package in "${packages[@]}"; do
@@ -151,9 +137,9 @@ restore_termux_packages() {
         done < "$TERMUX_PACKAGES_FILE"
 
         # Attempt to fix broken dependencies
-        apt-get install -f -y > /dev/null 2>> "$ERROR_LOG" &
+        apt install -f -y > /dev/null 2>> "$ERROR_LOG" &
         spinner $! "Fixing broken dependencies"
-        if ! check_success "apt-get install -f"; then
+        if ! check_success "apt install -f"; then
             log_error "Failed to fix broken dependencies."
         fi
     else
@@ -241,17 +227,17 @@ done
 echo -e "${GREEN}Storage is ready.${RESET}"
 
 # Step 2: Update and upgrade packages
-apt update > /dev/null 2>&1 && apt upgrade -y > /dev/null 2>&1 &
+pkg update > /dev/null 2>&1 && pkg upgrade -y > /dev/null 2>&1 &
 spinner $! "Updating and upgrading packages"
-if ! check_success "apt update && apt upgrade"; then
-    log_error "apt update && apt upgrade failed."
+if ! check_success "pkg update && pkg upgrade"; then
+    log_error "pkg update && pkg upgrade failed."
 fi
 
 # Step 3: Install git
-apt install git -y > /dev/null 2>&1 &
+pkg install git -y > /dev/null 2>&1 &
 spinner $! "Installing git"
-if ! check_success "apt install git"; then
-    log_error "apt install git failed."
+if ! check_success "pkg install git"; then
+    log_error "pkg install git failed."
 fi
 
 # Step 4: Clone the Ter_back repository
