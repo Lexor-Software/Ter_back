@@ -36,6 +36,9 @@ TERMUX_PACKAGES_FILE="installed_packages.txt"
 PIP_PACKAGES_FILE="installed_pip_packages.txt"
 ERROR_LOG="setup_errors.log"
 
+# Variable to track if ZSH was installed
+ZSH_INSTALLED=false
+
 # Spinner characters
 SPINNER=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
 
@@ -163,7 +166,83 @@ restore_pip_packages() {
     fi
 }
 
-# Function to install and configure Termux GUI
+# Function to install and configure ZSH
+install_zsh() {
+    echo -e "${BLUE}Installing and configuring ZSH...${RESET}"
+    
+    # Install ZSH
+    pkg install zsh -y > /dev/null 2>> "$ERROR_LOG" &
+    spinner $! "Installing ZSH"
+    if ! check_success "pkg install zsh"; then
+        log_error "Failed to install ZSH."
+        return 1
+    fi
+
+    # Install lsd
+    pkg install lsd -y > /dev/null 2>> "$ERROR_LOG" &
+    spinner $! "Installing lsd"
+    if ! check_success "pkg install lsd"; then
+        log_error "Failed to install lsd."
+        return 1
+    fi
+
+    # Clone Termux-header repository
+    git clone https://github.com/Lexor-Software/Termux-header.git > /dev/null 2>> "$ERROR_LOG" &
+    spinner $! "Cloning Termux-header repository"
+    if ! check_success "git clone Termux-header"; then
+        log_error "Failed to clone Termux-header repository."
+        return 1
+    fi
+
+    # Run Termux-header script
+    cd Termux-header
+    bash Termux-header.sh > /dev/null 2>> "$ERROR_LOG" &
+    spinner $! "Running Termux-header script"
+    if ! check_success "Termux-header script"; then
+        log_error "Failed to run Termux-header script."
+        cd ..
+        return 1
+    fi
+    cd ..
+
+    # Move zshrc to .zshrc
+    mv zshrc ~/.zshrc > /dev/null 2>> "$ERROR_LOG" &
+    spinner $! "Moving zshrc to .zshrc"
+    if ! check_success "moving zshrc"; then
+        log_error "Failed to move zshrc."
+        return 1
+    fi
+
+    # Remove existing goto file if it exists
+    rm -f /data/data/com.termux/files/usr/bin/goto > /dev/null 2>> "$ERROR_LOG"
+
+    # Move goto_zshrc to the correct location
+    mv goto_zshrc /data/data/com.termux/files/usr/bin/goto > /dev/null 2>> "$ERROR_LOG" &
+    spinner $! "Moving goto_zshrc"
+    if ! check_success "moving goto_zshrc"; then
+        log_error "Failed to move goto_zshrc."
+        return 1
+    fi
+
+    # Make goto executable
+    chmod +x /data/data/com.termux/files/usr/bin/goto > /dev/null 2>> "$ERROR_LOG" &
+    spinner $! "Making goto executable"
+    if ! check_success "chmod goto"; then
+        log_error "Failed to make goto executable."
+        return 1
+    fi
+
+    # Source .zshrc
+    source ~/.zshrc > /dev/null 2>> "$ERROR_LOG" &
+    spinner $! "Sourcing .zshrc"
+    if ! check_success "sourcing .zshrc"; then
+        log_error "Failed to source .zshrc."
+        return 1
+    fi
+
+    echo -e "${GREEN}ZSH installation and configuration completed successfully!${RESET}"
+}
+
 # Function to install and configure Termux GUI
 install_termux_gui() {
     echo -e "${BLUE}Installing Termux GUI...${RESET}"
@@ -287,7 +366,53 @@ EOF
     echo -e "${GREEN}Termux GUI installed and configured successfully!${RESET}"
 }
 
+# Main script execution
+
+# Step 1: Ask to restore Termux packages
+if ask_confirm "Do you want to restore Termux packages?"; then
+    restore_termux_packages
+fi
+
+# Step 2: Install additional Termux packages
+if ask_confirm "Do you want to install additional Termux packages?"; then
+    install_additional_termux_packages
+fi
+
+# Step 3: Ask to restore pip packages
+if ask_confirm "Do you want to restore pip packages?"; then
+    restore_pip_packages
+fi
+
+# Step 3.5: Install ZSH
+if ask_confirm "Do you want to install and configure ZSH?"; then
+    install_zsh
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}ZSH installation failed. Check $ERROR_LOG for details.${RESET}"
+    else
+        ZSH_INSTALLED=true
+    fi
+
+# Step 4: Install Termux GUI packages
+if ask_confirm "Do you want to install Termux GUI packages?"; then
+    install_termux_gui_packages
+fi
+
+# Step 5: Install and configure Termux GUI
+if ask_confirm "Do you want to install and configure Termux GUI?"; then
+    install_termux_gui
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}GUI installation failed. Check $ERROR_LOG for details.${RESET}"
+    fi
+fi
+
 # Print current portrait and landscape resolutions
-source .bashrc
+if [ "$ZSH_INSTALLED" = true ]; then
+    source ~/.zshrc
+else
+    source ~/.bashrc
+fi
 echo -e "${BLUE}Current Portrait Resolution: $PORTRAIT_RESOLUTION${RESET}"
 echo -e "${BLUE}Current Landscape Resolution: $LANDSCAPE_RESOLUTION${RESET}"
+
+# Final message
+echo -e "${GREEN}Setup completed! Check $ERROR_LOG for any errors that occurred during installation.${RESET}"
