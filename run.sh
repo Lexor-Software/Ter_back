@@ -118,47 +118,58 @@ if ! check_success "git clone"; then
     log_error "Failed to clone Ter_back repository."
 fi
 
-# Step 7: Move contents of Ter_back to the current directory
-echo -e "${BLUE}Moving contents of Ter_back...${RESET}"
+# Step 7: Move specific files from Ter_back to the current directory
+echo -e "${BLUE}Moving files from Ter_back...${RESET}"
 if [ -d "Ter_back" ]; then
-    mv Ter_back/* . > /dev/null 2>&1 &
-    spinner $! "Moving contents of Ter_back"
-    if ! check_success "mv Ter_back/* ."; then
-        log_error "Failed to move contents of Ter_back."
-    else
-        # Delete the Ter_back folder after moving its contents
-        rm -rf Ter_back > /dev/null 2>&1 &
-        spinner $! "Deleting Ter_back folder"
-        if ! check_success "rm -rf Ter_back"; then
-            log_error "Failed to delete Ter_back folder."
-        else
-            # Rename bashrc to .bashrc if it exists
-            if [ -f "bashrc" ]; then
-                mv bashrc .bashrc > /dev/null 2>&1 &
-                spinner $! "Renaming bashrc to .bashrc"
-                if ! check_success "mv bashrc .bashrc"; then
-                    log_error "Failed to rename bashrc to .bashrc."
-                else
-                    # Source the .bashrc file
-                    echo -e "${BLUE}Sourcing .bashrc file...${RESET}"
-                    source ~/.bashrc > /dev/null 2>&1 &
-                    spinner $! "Sourcing .bashrc file"
-                    if ! check_success "source .bashrc"; then
-                        log_error "Failed to source .bashrc file."
-                    fi
-                fi
-            else
-                echo -e "${RED}Error: bashrc file not found.${RESET}"
-                log_error "bashrc file not found."
+    # List of files to move
+    files_to_move=("goto" "installed_pip_packages.txt" "setup.sh" "bashrc" "installed_packages.txt")
+
+    for file in "${files_to_move[@]}"; do
+        if [ -f "Ter_back/$file" ]; then
+            mv "Ter_back/$file" . > /dev/null 2>&1 &
+            spinner $! "Moving $file"
+            if ! check_success "mv Ter_back/$file ."; then
+                log_error "Failed to move $file."
             fi
+        else
+            echo -e "${RED}Error: $file not found in Ter_back directory.${RESET}"
+            log_error "$file not found in Ter_back directory."
         fi
+    done
+
+    # Delete the Ter_back folder after moving its contents
+    rm -rf Ter_back > /dev/null 2>&1 &
+    spinner $! "Deleting Ter_back folder"
+    if ! check_success "rm -rf Ter_back"; then
+        log_error "Failed to delete Ter_back folder."
     fi
 else
     echo -e "${RED}Error: Ter_back directory not found.${RESET}"
     log_error "Ter_back directory not found."
 fi
 
-# Step 8: Move the goto script
+# Step 8: Rename bashrc to .bashrc and source it
+if [ -f "bashrc" ]; then
+    echo -e "${BLUE}Renaming bashrc to .bashrc...${RESET}"
+    mv bashrc .bashrc > /dev/null 2>&1 &
+    spinner $! "Renaming bashrc to .bashrc"
+    if ! check_success "mv bashrc .bashrc"; then
+        log_error "Failed to rename bashrc to .bashrc."
+    else
+        # Source the .bashrc file
+        echo -e "${BLUE}Sourcing .bashrc file...${RESET}"
+        source ~/.bashrc > /dev/null 2>&1 &
+        spinner $! "Sourcing .bashrc file"
+        if ! check_success "source .bashrc"; then
+            log_error "Failed to source .bashrc file."
+        fi
+    fi
+else
+    echo -e "${RED}Error: bashrc file not found.${RESET}"
+    log_error "bashrc file not found."
+fi
+
+# Step 9: Move the goto script and set permissions
 echo -e "${BLUE}Moving goto script...${RESET}"
 if [ -f "goto" ]; then
     mv goto /data/data/com.termux/files/usr/bin/goto > /dev/null 2>&1 &
@@ -179,13 +190,13 @@ else
     log_error "goto script not found."
 fi
 
-# Step 9: Print setup completion status
+# Step 10: Print setup completion status
 if [ -s "$ERROR_LOG" ]; then
     echo -e "${RED}Initial setup completed with errors. Check $ERROR_LOG for details.${RESET}"
 else
     echo -e "${GREEN}Initial setup completed successfully!${RESET}"
 fi
 
-# Step 10: Execute setup.sh
+# Step 11: Execute setup.sh
 echo -e "${BLUE}Executing setup.sh...${RESET}"
 bash setup.sh
