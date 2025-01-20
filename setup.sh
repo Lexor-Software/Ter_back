@@ -197,7 +197,7 @@ install_zsh() {
     # Run Termux-header script
     cd Termux-header
     bash Termux-header.sh > /dev/null 2>> "$ERROR_LOG" &
-    #spinner $! "Running Termux-header script"
+    spinner $! "Running Termux-header script"
     if ! check_success "Termux-header script"; then
         log_error "Failed to run Termux-header script."
         cd ..
@@ -391,7 +391,7 @@ if ask_confirm "Do you want to install and configure ZSH?"; then
     else
         ZSH_INSTALLED=true
     fi
-fi  
+fi
 
 # Step 4: Install Termux GUI packages
 if ask_confirm "Do you want to install Termux GUI packages?"; then
@@ -410,7 +410,7 @@ fi
 if [ "$ZSH_INSTALLED" = true ]; then
     source ~/.zshrc
 else
-    source ~/.zshrc
+    source ~/.bashrc
 fi
 echo -e "${BLUE}Current Portrait Resolution: $PORTRAIT_RESOLUTION${RESET}"
 echo -e "${BLUE}Current Landscape Resolution: $LANDSCAPE_RESOLUTION${RESET}"
