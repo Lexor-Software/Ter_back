@@ -120,17 +120,22 @@ fi
 
 # Step 7: Move contents of Ter_back to the current directory
 echo -e "${BLUE}Moving contents of Ter_back...${RESET}"
-mv Ter_back/* . > /dev/null 2>&1 &
-spinner $! "Moving contents of Ter_back"
-if ! check_success "mv Ter_back/* ."; then
-    log_error "Failed to move contents of Ter_back."
-else
-    # Delete the Ter_back folder after moving its contents
-    rm -rf Ter_back > /dev/null 2>&1 &
-    spinner $! "Deleting Ter_back folder"
-    if ! check_success "rm -rf Ter_back"; then
-        log_error "Failed to delete Ter_back folder."
+if [ -d "Ter_back" ]; then
+    mv Ter_back/* . > /dev/null 2>&1 &
+    spinner $! "Moving contents of Ter_back"
+    if ! check_success "mv Ter_back/* ."; then
+        log_error "Failed to move contents of Ter_back."
+    else
+        # Delete the Ter_back folder after moving its contents
+        rm -rf Ter_back > /dev/null 2>&1 &
+        spinner $! "Deleting Ter_back folder"
+        if ! check_success "rm -rf Ter_back"; then
+            log_error "Failed to delete Ter_back folder."
+        fi
     fi
+else
+    echo -e "${RED}Error: Ter_back directory not found.${RESET}"
+    log_error "Ter_back directory not found."
 fi
 
 # Step 8: Make setup.sh executable
