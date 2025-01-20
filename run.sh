@@ -74,7 +74,6 @@ display_header() {
 }
 
 # Display the header
-clear
 display_header
 
 # Spinner characters
