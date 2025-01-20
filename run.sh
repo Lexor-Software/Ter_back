@@ -172,7 +172,7 @@ fi
 # Step 9: Rename bashrc to .bashrc and source it
 if [ -f "bashrc" ]; then
     echo -e "${BLUE}Renaming bashrc to .bashrc...${RESET}"
-    mv bashrc .bashrc && mv zshrc .zshrc > /dev/null 2>&1 &
+    mv bashrc .bashrc > /dev/null 2>&1 &
     spinner $! "Renaming bashrc to .bashrc"
     if ! check_success "mv bashrc .bashrc"; then
         log_error "Failed to rename bashrc to .bashrc."
