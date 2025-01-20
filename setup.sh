@@ -6,36 +6,9 @@ clear
 # Function to display the header
 display_header() {
     echo -e "${BLUE}"
-    echo "  _______  ______  __  __  ____  _  __   ____  _   _ ____  "
-    echo " |__   __||  ____||  \/  |/ __ \| |/ /  / __ \| | | |  _ \ "
-    echo "    | |   | |__   | \  / | |  | | ' /  | |  | | | | | |_) |"
-    echo "    | |   |  __|  | |\/| | |  | |  <   | |  | | | | |  __/ "
-    echo "    | |   | |____ | |  | | |__| | . \  | |__| | |_| | |    "
-    echo "    |_|   |______||_|  |_|\____/|_|\_\  \___\_\\___/|_|    "
-    echo -e "${RESET}"
-    echo -e "${YELLOW}                     By Red Scorpion${RESET}"
+    figlet -f slant "Setup"
+    echo -e "${YELLOW}By Red Scorpion${RESET}"
     echo -e "${GREEN}===================================================${RESET}"
-}
-
-# Function to animate the header
-animate_header() {
-    for i in {1..5}; do
-        clear
-        display_header
-        sleep 0.5
-        clear
-        echo -e "${BLUE}"
-        echo "  _______  ______  __  __  ____  _  __   ____  _   _ ____  "
-        echo " |__   __||  ____||  \/  |/ __ \| |/ /  / __ \| | | |  _ \ "
-        echo "    | |   | |__   | \  / | |  | | ' /  | |  | | | | | |_) |"
-        echo "    | |   |  __|  | |\/| | |  | |  <   | |  | | | | |  __/ "
-        echo "    | |   | |____ | |  | | |__| | . \  | |__| | |_| | |    "
-        echo "    |_|   |______||_|  |_|\____/|_|\_\  \___\_\\___/|_|    "
-        echo -e "${RESET}"
-        echo -e "${YELLOW}                     By Red Scorpion${RESET}"
-        echo -e "${GREEN}===================================================${RESET}"
-        sleep 0.5
-    done
 }
 
 # Colors for formatting
@@ -45,6 +18,19 @@ YELLOW="\033[33m"
 BLUE="\033[34m"
 RESET="\033[0m"
 
+# Check if figlet is installed
+if ! command -v figlet &> /dev/null; then
+    echo -e "${YELLOW}Installing figlet (required for header)...${RESET}"
+    pkg install figlet -y
+    if ! command -v figlet &> /dev/null; then
+        echo -e "${RED}Error: figlet installation failed. Exiting...${RESET}"
+        exit 1
+    fi
+fi
+
+# Display the header
+display_header
+
 # Files to save the lists
 TERMUX_PACKAGES_FILE="installed_packages.txt"
 PIP_PACKAGES_FILE="installed_pip_packages.txt"
@@ -52,16 +38,6 @@ ERROR_LOG="setup_errors.log"
 
 # Spinner characters
 SPINNER=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
-
-# Check for ncurses (required for tput)
-if ! command -v tput &> /dev/null; then
-    echo -e "${YELLOW}Installing ncurses-utils (required for tput)...${RESET}"
-    pkg install ncurses-utils -y
-    if ! command -v tput &> /dev/null; then
-        echo -e "${RED}Error: ncurses-utils installation failed. Exiting...${RESET}"
-        exit 1
-    fi
-fi
 
 # Function to display a spinner while a command is running
 spinner() {
@@ -244,9 +220,6 @@ install_termux_gui() {
 
 # Initialize error log
 > "$ERROR_LOG"
-
-# Display the animated header
-animate_header
 
 # Step 1: Check and set up storage permissions
 echo -e "${BLUE}Checking storage permissions...${RESET}"
