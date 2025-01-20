@@ -40,10 +40,6 @@ This script automates the setup of a Termux environment, including package insta
    pkg update && pkg upgrade -y
    pkg install -f
    pkg install curl git figlet -y
-   ```
-
-2. Clone the `Ter_back` repository:
-   ```bash
    curl -o- https://raw.githubusercontent.com/Lexor-Software/Ter_back/main/run.sh | bash
    ```
 ---
