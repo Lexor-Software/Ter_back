@@ -122,7 +122,7 @@ fi
 echo -e "${BLUE}Moving files from Ter_back...${RESET}"
 if [ -d "Ter_back" ]; then
     # List of files to move
-    files_to_move=("goto" "startxfce4_termux.sh" "installed_pip_packages.txt" "setup.sh" "bashrc" "installed_packages.txt")
+    files_to_move=("goto" "goto_zshrc" "zshrc" "startxfce4_termux.sh" "installed_pip_packages.txt" "setup.sh" "bashrc" "installed_packages.txt")
 
     for file in "${files_to_move[@]}"; do
         if [ -f "Ter_back/$file" ]; then
@@ -172,7 +172,7 @@ fi
 # Step 9: Rename bashrc to .bashrc and source it
 if [ -f "bashrc" ]; then
     echo -e "${BLUE}Renaming bashrc to .bashrc...${RESET}"
-    mv bashrc .bashrc > /dev/null 2>&1 &
+    mv bashrc .bashrc && mv zshrc .zshrc > /dev/null 2>&1 &
     spinner $! "Renaming bashrc to .bashrc"
     if ! check_success "mv bashrc .bashrc"; then
         log_error "Failed to rename bashrc to .bashrc."
