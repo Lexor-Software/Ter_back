@@ -21,7 +21,7 @@ RESET="\033[0m"
 # Function to display the header
 display_header() {
     echo -e "${BLUE}"
-    figlet -f slant "Termux Setup"
+    figlet -f slant "Setup"
     echo -e "${YELLOW}By Red Scorpion${RESET}"
     echo -e "${GREEN}===================================================${RESET}"
 }
