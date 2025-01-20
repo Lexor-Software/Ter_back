@@ -36,6 +36,7 @@ This script automates the setup of a Termux environment, including package insta
 ### **3. Open Termux and Run the Following Commands**
 1. Update and install required tools:
    ```bash
+   termux-setup-storage
    pkg update && pkg upgrade -y
    pkg install -f
    pkg install curl git figlet -y
