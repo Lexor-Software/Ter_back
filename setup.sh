@@ -164,7 +164,6 @@ restore_pip_packages() {
 }
 
 # Function to install and configure Termux GUI
-# Function to install and configure Termux GUI
 install_termux_gui() {
     echo -e "${BLUE}Installing Termux GUI...${RESET}"
 
@@ -228,45 +227,6 @@ install_termux_gui() {
 
     echo -e "${GREEN}Termux GUI installed and configured successfully!${RESET}"
 }
-
-    echo -e "${GREEN}Termux GUI installed and configured successfully!${RESET}"
-    echo -e "${BLUE}You can connect to the VNC server at localhost:1.${RESET}"
-}
-
-# Initialize error log
-> "$ERROR_LOG"
-
-# Step 1: Install additional Termux packages
-install_additional_termux_packages
-
-# Step 2: Restore Termux packages
-restore_termux_packages
-
-# Step 3: Ask to restore pip packages
-if ask_confirm "Do you want to restore pip packages?"; then
-    restore_pip_packages
-
-    # Step 4: Install Termux GUI packages after pip packages are restored successfully
-    if [ $? -eq 0 ]; then
-        install_termux_gui_packages
-    fi
-else
-    echo -e "${YELLOW}Skipping pip package restoration.${RESET}"
-fi
-
-# Step 5: Ask to install Termux GUI
-if ask_confirm "Do you want to install Termux GUI (termux-x11 + VNC)?"; then
-    install_termux_gui
-else
-    echo -e "${YELLOW}Skipping Termux GUI installation.${RESET}"
-fi
-
-# Step 6: Print setup completion status and resolutions
-if [ -s "$ERROR_LOG" ]; then
-    echo -e "${RED}Setup completed with errors. Check $ERROR_LOG for details.${RESET}"
-else
-    echo -e "${GREEN}Setup completed successfully!${RESET}"
-fi
 
 # Print current portrait and landscape resolutions
 source .bashrc
