@@ -240,5 +240,6 @@ else
 fi
 
 # Print current portrait and landscape resolutions
+source .bashrc
 echo -e "${BLUE}Current Portrait Resolution: $PORTRAIT_RESOLUTION${RESET}"
 echo -e "${BLUE}Current Landscape Resolution: $LANDSCAPE_RESOLUTION${RESET}"
