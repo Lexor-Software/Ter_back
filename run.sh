@@ -206,4 +206,4 @@ fi
 
 # Step 10: Execute setup.sh
 echo -e "${BLUE}Executing setup.sh...${RESET}"
-bash setup.shash setup.sh
+bash setup.sh
