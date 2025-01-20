@@ -10,18 +10,31 @@ YELLOW="\033[33m"
 BLUE="\033[34m"
 RESET="\033[0m"
 
-# Function to log errors
-log_error() {
-    echo -e "${RED}Error: $1${RESET}" >> "$ERROR_LOG"
+# Function to display the header
+display_header() {
+    echo -e "${BLUE}"
+    figlet -f slant "Termux Setup"
+    echo -e "${YELLOW}By Red Scorpion${RESET}"
+    echo -e "${GREEN}===================================================${RESET}"
 }
+
+# Check if figlet is installed
+if ! command -v figlet &> /dev/null; then
+    echo -e "${YELLOW}Installing figlet (required for header)...${RESET}"
+    pkg install figlet -y
+    if ! command -v figlet &> /dev/null; then
+        echo -e "${RED}Error: figlet installation failed. Exiting...${RESET}"
+        exit 1
+    fi
+fi
+
+# Display the header
+display_header
 
 # Files to save the lists
 TERMUX_PACKAGES_FILE="installed_packages.txt"
 PIP_PACKAGES_FILE="installed_pip_packages.txt"
 ERROR_LOG="setup_errors.log"
-
-# Initialize error log
-> "$ERROR_LOG"
 
 # Spinner characters
 SPINNER=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
@@ -57,6 +70,11 @@ check_success() {
     fi
 }
 
+# Function to log errors
+log_error() {
+    echo -e "${RED}Error: $1${RESET}" >> "$ERROR_LOG"
+}
+
 # Function to ask for user confirmation
 ask_confirm() {
     local prompt="$1"
@@ -70,49 +88,7 @@ ask_confirm() {
     done
 }
 
-# Step 1: Move the goto script
-echo -e "${BLUE}Moving goto script...${RESET}"
-if [ -f "goto" ]; then
-    mv goto /data/data/com.termux/files/usr/bin/goto > /dev/null 2>&1 &
-    spinner $! "Moving goto script"
-    if ! check_success "mv goto"; then
-        log_error "Failed to move goto script."
-    else
-        # Set permissions for the goto script
-        echo -e "${BLUE}Setting permissions for goto script...${RESET}"
-        chmod +xrw /data/data/com.termux/files/usr/bin/goto > /dev/null 2>&1 &
-        spinner $! "Setting permissions for goto script"
-        if ! check_success "chmod +xrw goto"; then
-            log_error "Failed to set permissions for goto script."
-        fi
-    fi
-else
-    echo -e "${RED}Error: goto script not found.${RESET}"
-    log_error "goto script not found."
-fi
-
-# Step 2: Move the .bashrc file
-echo -e "${BLUE}Moving .bashrc file...${RESET}"
-if [ -f ".bashrc" ]; then
-    mv .bashrc ~/.bashrc > /dev/null 2>&1 &
-    spinner $! "Moving .bashrc file"
-    if ! check_success "mv .bashrc"; then
-        log_error "Failed to move .bashrc file."
-    fi
-else
-    echo -e "${RED}Error: .bashrc file not found.${RESET}"
-    log_error ".bashrc file not found."
-fi
-
-# Step 3: Source the .bashrc file
-echo -e "${BLUE}Sourcing .bashrc file...${RESET}"
-source ~/.bashrc > /dev/null 2>&1 &
-spinner $! "Sourcing .bashrc file"
-if ! check_success "source .bashrc"; then
-    log_error "Failed to source .bashrc file."
-fi
-
-# Step 4: Install additional Termux packages
+# Function to install additional Termux packages
 install_additional_termux_packages() {
     echo -e "${BLUE}Installing additional Termux packages...${RESET}"
     local packages=(
@@ -129,23 +105,41 @@ install_additional_termux_packages() {
     done
 }
 
-# Step 5: Restore Termux packages
+# Function to install Termux GUI packages
+install_termux_gui_packages() {
+    echo -e "${BLUE}Installing Termux GUI packages...${RESET}"
+    local packages=(
+        termux-api
+        termux-api-static
+    )
+
+    for package in "${packages[@]}"; do
+        apt install -y "$package" > /dev/null 2>> "$ERROR_LOG" &
+        spinner $! "Installing $package"
+        if ! check_success "apt install $package"; then
+            echo -e "${YELLOW}Skipping $package due to errors.${RESET}"
+            log_error "Failed to install $package."
+        fi
+    done
+}
+
+# Function to restore Termux packages
 restore_termux_packages() {
     echo -e "${BLUE}Restoring Termux packages...${RESET}"
     if [ -f "$TERMUX_PACKAGES_FILE" ]; then
         while read -r package; do
-            pkg install -y "$package" > /dev/null 2>> "$ERROR_LOG" &
+            apt install -y "$package" > /dev/null 2>> "$ERROR_LOG" &
             spinner $! "Installing $package"
-            if ! check_success "pkg install $package"; then
+            if ! check_success "apt install $package"; then
                 echo -e "${YELLOW}Skipping $package due to errors.${RESET}"
                 log_error "Failed to install $package."
             fi
         done < "$TERMUX_PACKAGES_FILE"
 
         # Attempt to fix broken dependencies
-        pkg install -f -y > /dev/null 2>> "$ERROR_LOG" &
+        apt install -f -y > /dev/null 2>> "$ERROR_LOG" &
         spinner $! "Fixing broken dependencies"
-        if ! check_success "pkg install -f"; then
+        if ! check_success "apt install -f"; then
             log_error "Failed to fix broken dependencies."
         fi
     else
@@ -154,7 +148,7 @@ restore_termux_packages() {
     fi
 }
 
-# Step 6: Restore pip packages
+# Function to restore pip packages
 restore_pip_packages() {
     echo -e "${BLUE}Restoring pip packages...${RESET}"
     if [ -f "$PIP_PACKAGES_FILE" ]; then
@@ -169,7 +163,7 @@ restore_pip_packages() {
     fi
 }
 
-# Step 7: Install and configure Termux GUI
+# Function to install and configure Termux GUI
 install_termux_gui() {
     echo -e "${BLUE}Installing Termux GUI...${RESET}"
 
@@ -210,29 +204,41 @@ install_termux_gui() {
     echo -e "${BLUE}You can connect to the VNC server at localhost:1.${RESET}"
 }
 
-# Step 8: Install additional Termux packages
+# Initialize error log
+> "$ERROR_LOG"
+
+# Step 1: Install additional Termux packages
 install_additional_termux_packages
 
-# Step 9: Restore Termux packages
+# Step 2: Restore Termux packages
 restore_termux_packages
 
-# Step 10: Ask to restore pip packages
+# Step 3: Ask to restore pip packages
 if ask_confirm "Do you want to restore pip packages?"; then
     restore_pip_packages
+
+    # Step 4: Install Termux GUI packages after pip packages are restored successfully
+    if [ $? -eq 0 ]; then
+        install_termux_gui_packages
+    fi
 else
     echo -e "${YELLOW}Skipping pip package restoration.${RESET}"
 fi
 
-# Step 11: Ask to install Termux GUI
+# Step 5: Ask to install Termux GUI
 if ask_confirm "Do you want to install Termux GUI (termux-x11 + VNC)?"; then
     install_termux_gui
 else
     echo -e "${YELLOW}Skipping Termux GUI installation.${RESET}"
 fi
 
-# Step 12: Print setup completion status
+# Step 6: Print setup completion status and resolutions
 if [ -s "$ERROR_LOG" ]; then
     echo -e "${RED}Setup completed with errors. Check $ERROR_LOG for details.${RESET}"
 else
     echo -e "${GREEN}Setup completed successfully!${RESET}"
 fi
+
+# Print current portrait and landscape resolutions
+echo -e "${BLUE}Current Portrait Resolution: $PORTRAIT_RESOLUTION${RESET}"
+echo -e "${BLUE}Current Landscape Resolution: $LANDSCAPE_RESOLUTION${RESET}"
