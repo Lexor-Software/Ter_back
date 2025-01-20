@@ -118,24 +118,22 @@ if ! check_success "git clone"; then
     log_error "Failed to clone Ter_back repository."
 fi
 
-# Step 7: Move specific files from Ter_back to the current directory
+# Step 7: Move all files from Ter_back to the current directory
 echo -e "${BLUE}Moving files from Ter_back...${RESET}"
 if [ -d "Ter_back" ]; then
-    # List of files to move
-    files_to_move=("goto" "goto_zshrc" "zshrc" "startxfce4_termux.sh" "installed_pip_packages.txt" "setup.sh" "bashrc" "installed_packages.txt")
-
-    for file in "${files_to_move[@]}"; do
-        if [ -f "Ter_back/$file" ]; then
-            mv "Ter_back/$file" . > /dev/null 2>&1 &
-            spinner $! "Moving $file"
-            if ! check_success "mv Ter_back/$file ."; then
-                log_error "Failed to move $file."
-            fi
-        else
-            echo -e "${RED}Error: $file not found in Ter_back directory.${RESET}"
-            log_error "$file not found in Ter_back directory."
-        fi
-    done
+    # Remove .git directory first
+    rm -rf Ter_back/.git > /dev/null 2>&1 &
+    spinner $! "Removing .git directory"
+    if ! check_success "rm -rf Ter_back/.git"; then
+        log_error "Failed to remove .git directory."
+    fi
+    
+    # Move all remaining files
+    mv -f Ter_back/* . > /dev/null 2>&1 &
+    spinner $! "Moving files from Ter_back"
+    if ! check_success "mv Ter_back files"; then
+        log_error "Failed to move files from Ter_back."
+    fi
 
     # Delete the Ter_back folder after moving its contents
     rm -rf Ter_back > /dev/null 2>&1 &
