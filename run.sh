@@ -121,16 +121,61 @@ fi
 # Step 7: Move contents of Ter_back to the current directory
 echo -e "${BLUE}Moving contents of Ter_back...${RESET}"
 if [ -d "Ter_back" ]; then
-    # Check if .bashrc exists in Ter_back before moving
-    if [ -f "Ter_back/.bashrc" ]; then
-        mv Ter_back/* . > /dev/null 2>&1 &
-        spinner $! "Moving contents of Ter_back"
-        if ! check_success "mv Ter_back/* ."; then
-            log_error "Failed to move contents of Ter_back."
+    mv Ter_back/* . > /dev/null 2>&1 &
+    spinner $! "Moving contents of Ter_back"
+    if ! check_success "mv Ter_back/* ."; then
+        log_error "Failed to move contents of Ter_back."
+    else
+        # Delete the Ter_back folder after moving its contents
+        rm -rf Ter_back > /dev/null 2>&1 &
+        spinner $! "Deleting Ter_back folder"
+        if ! check_success "rm -rf Ter_back"; then
+            log_error "Failed to delete Ter_back folder."
         else
-            # Delete the Ter_back folder after moving its contents
-            rm -rf Ter_back > /dev/null 2>&1 &
-            spinner $! "Deleting Ter_back folder"
+            # Rename bashrc to .bashrc if it exists
+            if [ -f "bashrc" ]; then
+                mv bashrc .bashrc > /dev/null 2>&1 &
+                spinner $! "Renaming bashrc to .bashrc"
+                if ! check_success "mv bashrc .bashrc"; then
+                    log_error "Failed to rename bashrc to .bashrc."
+                else
+                    # Source the .bashrc file
+                    echo -e "${BLUE}Sourcing .bashrc file...${RESET}"
+                    source ~/.bashrc > /dev/null 2>&1 &
+                    spinner $! "Sourcing .bashrc file"
+                    if ! check_success "source .bashrc"; then
+                        log_error "Failed to source .bashrc file."
+                    fi
+                fi
+            else
+                echo -e "${RED}Error: bashrc file not found.${RESET}"
+                log_error "bashrc file not found."
+            fi
+        fi
+    fi
+else
+    echo -e "${RED}Error: Ter_back directory not found.${RESET}"
+    log_error "Ter_back directory not found."
+fi
+
+# Step 8: Make setup.sh executable
+echo -e "${BLUE}Making setup.sh executable...${RESET}"
+chmod +xrw setup.sh > /dev/null 2>&1 &
+spinner $! "Making setup.sh executable"
+if ! check_success "chmod +xrw setup.sh"; then
+    log_error "Failed to make setup.sh executable."
+fi
+
+# Step 9: Print setup completion status
+if [ -s "$ERROR_LOG" ]; then
+    echo -e "${RED}Initial setup completed with errors. Check $ERROR_LOG for details.${RESET}"
+else
+    echo -e "${GREEN}Initial setup completed successfully!${RESET}"
+fi
+
+# Step 10: Execute setup.sh
+echo -e "${BLUE}Executing setup.sh...${RESET}"
+bash setup.shack folder"
             if ! check_success "rm -rf Ter_back"; then
                 log_error "Failed to delete Ter_back folder."
             fi
