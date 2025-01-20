@@ -36,7 +36,7 @@ This script automates the setup of a Termux environment, including package insta
 ### **3. Open Termux and Run the Following Commands**
 1. Update and install required tools:
    ```bash
-   apt update && apt install curl git toilet figlet -y
+   apt update && apt install curl git figlet -y
    ```
 
 2. Clone the `Ter_back` repository:
