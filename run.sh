@@ -68,7 +68,7 @@ fi
 # Step 5: Display the header (now that figlet is installed)
 display_header() {
     echo -e "${BLUE}"
-    figlet -f slant "Initial Setup"
+    figlet -f slant "Pre_Setup"
     echo -e "${YELLOW}By Red Scorpion${RESET}"
     echo -e "${GREEN}===================================================${RESET}"
 }
@@ -146,49 +146,7 @@ else
     log_error "Ter_back directory not found."
 fi
 
-# Step 8: Move the goto script and set permissions
-echo -e "${BLUE}Moving goto script...${RESET}"
-if [ -f "goto" ]; then
-    mv goto /data/data/com.termux/files/usr/bin/goto > /dev/null 2>&1 &
-    spinner $! "Moving goto script"
-    if ! check_success "mv goto"; then
-        log_error "Failed to move goto script."
-    else
-        # Set permissions for the goto script
-        echo -e "${BLUE}Setting permissions for goto script...${RESET}"
-        chmod +xrw /data/data/com.termux/files/usr/bin/goto > /dev/null 2>&1 &
-        spinner $! "Setting permissions for goto script"
-        if ! check_success "chmod +xrw goto"; then
-            log_error "Failed to set permissions for goto script."
-        fi
-    fi
-else
-    echo -e "${RED}Error: goto script not found.${RESET}"
-    log_error "goto script not found."
-fi
 
-# Step 9: Rename bashrc to .bashrc and source it
-if [ -f "bashrc" ]; then
-    echo -e "${BLUE}Renaming bashrc to .bashrc...${RESET}"
-    mv bashrc .bashrc > /dev/null 2>&1 &
-    spinner $! "Renaming bashrc to .bashrc"
-    if ! check_success "mv bashrc .bashrc"; then
-        log_error "Failed to rename bashrc to .bashrc."
-    else
-        # Source the .bashrc file
-        echo -e "${BLUE}Sourcing .bashrc file...${RESET}"
-        source ~/.bashrc > /dev/null 2>&1 &
-        spinner $! "Sourcing .bashrc file"
-        if ! check_success "source .bashrc"; then
-            log_error "Failed to source .bashrc file."
-        fi
-    fi
-else
-    echo -e "${RED}Error: bashrc file not found.${RESET}"
-    log_error "bashrc file not found."
-fi
-
-# Step 10: Print setup completion status
 if [ -s "$ERROR_LOG" ]; then
     echo -e "${RED}Initial setup completed with errors. Check $ERROR_LOG for details.${RESET}"
 else
@@ -197,4 +155,5 @@ fi
 
 # Step 11: Execute setup.sh
 echo -e "${BLUE}Executing setup.sh...${RESET}"
+read -p "Press any key to continue to setup..."
 bash setup.sh
