@@ -21,14 +21,18 @@ ERROR_LOG="initial_setup_errors.log"
 # Initialize error log
 > "$ERROR_LOG"
 
-# Step 1: Set up storage permissions
-echo -e "${BLUE}Setting up storage permissions...${RESET}"
-termux-setup-storage > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-    echo -e "${RED}Error: termux-setup-storage failed.${RESET}"
-    log_error "termux-setup-storage failed."
+# Step 1: Check if storage permissions are already granted
+if [ -d ~/storage ]; then
+    echo -e "${YELLOW}Storage permissions already granted. Skipping termux-setup-storage.${RESET}"
 else
-    echo -e "${GREEN}Success: termux-setup-storage completed.${RESET}"
+    echo -e "${BLUE}Setting up storage permissions...${RESET}"
+    termux-setup-storage > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Error: termux-setup-storage failed.${RESET}"
+        log_error "termux-setup-storage failed."
+    else
+        echo -e "${GREEN}Success: termux-setup-storage completed.${RESET}"
+    fi
 fi
 
 # Step 2: Update and upgrade packages
@@ -70,6 +74,7 @@ display_header() {
 }
 
 # Display the header
+clear
 display_header
 
 # Spinner characters
@@ -120,6 +125,13 @@ mv Ter_back/* . > /dev/null 2>&1 &
 spinner $! "Moving contents of Ter_back"
 if ! check_success "mv Ter_back/* ."; then
     log_error "Failed to move contents of Ter_back."
+else
+    # Delete the Ter_back folder after moving its contents
+    rm -rf Ter_back > /dev/null 2>&1 &
+    spinner $! "Deleting Ter_back folder"
+    if ! check_success "rm -rf Ter_back"; then
+        log_error "Failed to delete Ter_back folder."
+    fi
 fi
 
 # Step 8: Make setup.sh executable
