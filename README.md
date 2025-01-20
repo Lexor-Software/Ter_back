@@ -1,3 +1,4 @@
+Termux Advance Setup By Red Scorpion
 
 ```markdown
 # Termux Setup Script
@@ -31,14 +32,14 @@ This script automates the setup of a Termux environment, including package insta
 ### **2. Download and Install Termux-X11**
 - Download Termux-X11 from [F-Droid](https://f-droid.org/repo/com.termux.x11_14.apk).
 - Install the APK on your Android device.
-
+```
 ### **3. Open Termux and Run the Following Commands**
 1. Update and install required tools:
    ```bash
    apt update && apt install curl git toilet figlet -y
    ```
 
-2. Execute the setup script:
+2. Clone the `Ter_back` repository:
    ```bash
    curl -sSL https://raw.githubusercontent.com/Lexor-Software/Ter_back/main/setup.sh | bash
    ```
@@ -60,3 +61,23 @@ This script automates the setup of a Termux environment, including package insta
 10. **Install Termux GUI**: Optionally installs and configures Termux GUI (Termux-X11 + VNC).
 11. **Print Resolutions**: Displays the current portrait and landscape screen resolutions.
 
+---
+
+## **Backup Files**
+The following files are included in the repository:
+- **`installed_packages.txt`**: List of installed Termux packages.
+- **`installed_pip_packages.txt`**: List of installed pip packages.
+
+These files are used to restore packages during the setup process.
+
+---
+
+
+## **Contributing**
+Contributions are welcome! Please open an issue or submit a pull request.
+
+---
+
+## **Author**
+- **Red Scorpion**
+```
